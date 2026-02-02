@@ -1,0 +1,48 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+!/models/*
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+!glfw3*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+!VulVoxOptimizationProject.lib
+!glfw3*.lib
+!libVulVoxOptimizationProject.a
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Build directories
+/x64
+*/out
+/.vs
+*/.vs
+/VulOptiSim/x64
+/VulOptiTest/x64/Release
+/packages/Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.1.8.1.7
+/VulOptiSim/imgui.ini
+/VulOptiSim/performance_log.txt
+/VulOptiTest/x64/Debug
+/VulOptiTest/x64
