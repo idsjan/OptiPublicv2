@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "scene.h"
+#include "pathfinding_benchmark.h"
 
 Scene::Scene(vulvox::Renderer& renderer) : renderer(&renderer)
 {
@@ -58,6 +59,7 @@ void Scene::load_models_and_textures() const
 
 void Scene::spawn_heroes()
 {
+	run_pathfinding_benchmark(terrain);//Toegevoegd voor het benchmarken van de pathfinding
     Transform hero_transform;
     hero_transform.rotation = glm::quatLookAt(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f));
     hero_transform.scale = glm::vec3(1.f);

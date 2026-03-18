@@ -159,6 +159,7 @@
     <ClCompile Include="VulOptiSim.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\Downloads\pathfinding_benchmark.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="lightning.h" />
     <ClInclude Include="log.h" />

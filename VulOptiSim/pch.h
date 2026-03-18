@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <thread>
 #include <future>
+#include <chrono>
 
 //GLFW & Vulkan
 //#define GLFW_INCLUDE_VULKAN

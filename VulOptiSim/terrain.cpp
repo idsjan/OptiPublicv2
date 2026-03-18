@@ -277,3 +277,156 @@ int Terrain::get_tile_index(const int x, const int y) const
 {
     return (y * map_width) + x;
 }
+// ============================================================================
+// ADD EVERYTHING BELOW TO THE BOTTOM OF YOUR EXISTING terrain.cpp
+// Don't remove anything that's already there. Just paste this at the end.
+// ============================================================================
+
+/// <summary>
+/// Heuristic function for A*. 
+/// Uses Manhattan distance: the sum of horizontal and vertical distance to the target.
+/// This is a good heuristic for a grid where you can only move in 4 directions (up/down/left/right).
+/// </summary>
+float Terrain::heuristic(const glm::ivec2& a, const glm::ivec2& b) const
+{
+    return static_cast<float>(std::abs(a.x - b.x) + std::abs(a.y - b.y));
+}
+
+/// <summary>
+/// BFS pathfinding with measurements. Same algorithm as find_route, but it also
+/// tracks how long it took and how many nodes were visited.
+/// </summary>
+PathfindResult Terrain::find_route_bfs_measured(const glm::vec2& start_position, const glm::vec2& target_position) const
+{
+    PathfindResult result;
+
+    // Start the timer
+    auto time_start = std::chrono::high_resolution_clock::now();
+
+    glm::ivec2 start_tile{ start_position.x / tile_width, start_position.y / tile_length };
+    glm::ivec2 target_tile{ target_position.x / tile_width, target_position.y / tile_length };
+
+    std::queue<glm::ivec2> queue;
+    queue.push(start_tile);
+
+    std::unordered_set<glm::ivec2> visited;
+    visited.insert(start_tile);
+    result.nodes_visited = 1; // Count the start node
+
+    std::unordered_map<glm::ivec2, glm::ivec2> parents;
+
+    while (!queue.empty())
+    {
+        glm::ivec2 current = queue.front();
+        queue.pop();
+
+        if (current == target_tile)
+        {
+            result.route = reconstruct_path(parents, start_tile, current);
+            result.path_length = static_cast<int>(result.route.size());
+            break;
+        }
+
+        std::vector<glm::ivec2> neighbours = get_neighbours(current);
+
+        for (const glm::ivec2& neighbour : neighbours)
+        {
+            if (!visited.contains(neighbour))
+            {
+                visited.insert(neighbour);
+                parents[neighbour] = current;
+                queue.emplace(neighbour);
+                result.nodes_visited++; // Count each new node we visit
+            }
+        }
+    }
+
+    // Stop the timer
+    auto time_end = std::chrono::high_resolution_clock::now();
+    result.time_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count();
+
+    return result;
+}
+
+/// <summary>
+/// A* pathfinding with measurements.
+/// A* is like BFS but uses a priority queue instead of a regular queue.
+/// It picks the next node based on: cost so far + estimated cost to target.
+/// This means it explores tiles that are "closer" to the goal first,
+/// which usually means it visits far fewer tiles than BFS.
+/// </summary>
+PathfindResult Terrain::find_route_astar_measured(const glm::vec2& start_position, const glm::vec2& target_position) const
+{
+    PathfindResult result;
+
+    // Start the timer
+    auto time_start = std::chrono::high_resolution_clock::now();
+
+    glm::ivec2 start_tile{ start_position.x / tile_width, start_position.y / tile_length };
+    glm::ivec2 target_tile{ target_position.x / tile_width, target_position.y / tile_length };
+
+    // A* uses a priority queue. Each entry is a pair: (priority, tile_position).
+    // Priority = cost_so_far + heuristic_estimate.
+    // std::greater makes it a MIN-heap, so the lowest priority comes out first.
+    using QueueEntry = std::pair<float, glm::ivec2>;
+
+    // Custom comparator: only compare the float (priority), ignore the ivec2
+    auto compare = [](const QueueEntry& a, const QueueEntry& b) {
+        return a.first > b.first;
+        };
+
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>, decltype(compare)> open_set(compare);
+
+    open_set.push({ 0.f, start_tile });
+
+    // cost_so_far tracks the actual distance from start to each visited node
+    std::unordered_map<glm::ivec2, float> cost_so_far;
+    cost_so_far[start_tile] = 0.f;
+
+    std::unordered_map<glm::ivec2, glm::ivec2> parents;
+
+    result.nodes_visited = 0;
+
+    while (!open_set.empty())
+    {
+        // Get the tile with the lowest estimated total cost
+        glm::ivec2 current = open_set.top().second;
+        open_set.pop();
+
+        result.nodes_visited++;
+
+        if (current == target_tile)
+        {
+            result.route = reconstruct_path(parents, start_tile, current);
+            result.path_length = static_cast<int>(result.route.size());
+            break;
+        }
+
+        std::vector<glm::ivec2> neighbours = get_neighbours(current);
+
+        for (const glm::ivec2& neighbour : neighbours)
+        {
+            // Each step costs 1 (since we move one tile at a time)
+            float new_cost = cost_so_far[current] + 1.f;
+
+            // Only process this neighbour if we haven't visited it yet,
+            // or if we found a cheaper path to it
+            if (!cost_so_far.contains(neighbour) || new_cost < cost_so_far[neighbour])
+            {
+                cost_so_far[neighbour] = new_cost;
+
+                // Priority = actual cost + estimated remaining cost
+                float priority = new_cost + heuristic(neighbour, target_tile);
+
+                open_set.push({ priority, neighbour });
+                parents[neighbour] = current;
+            }
+        }
+    }
+
+    // Stop the timer
+    auto time_end = std::chrono::high_resolution_clock::now();
+    result.time_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count();
+
+    return result;
+}
