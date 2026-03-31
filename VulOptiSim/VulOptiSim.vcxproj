@@ -155,6 +155,7 @@
     <ClCompile Include="sprite_animation.cpp" />
     <ClCompile Include="sprite_manager.cpp" />
     <ClCompile Include="terrain.cpp" />
+    <ClCompile Include="tests.cpp" />
     <ClCompile Include="transform.cpp" />
     <ClCompile Include="VulOptiSim.cpp" />
   </ItemGroup>
@@ -169,9 +170,11 @@
     <ClInclude Include="scene.h" />
     <ClInclude Include="shield.h" />
     <ClInclude Include="hero.h" />
+    <ClInclude Include="spatial_grid.h" />
     <ClInclude Include="sprite_animation.h" />
     <ClInclude Include="sprite_manager.h" />
     <ClInclude Include="terrain.h" />
+    <ClInclude Include="tests.h" />
     <ClInclude Include="thread_pool.h" />
     <ClInclude Include="transform.h" />
     <ClInclude Include="utils.h" />

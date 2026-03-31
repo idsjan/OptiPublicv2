@@ -1,4 +1,7 @@
 #pragma once
+#include <mutex>
+
+struct SpatialGrid; // Forward declaration
 
 class Projectile
 {
@@ -6,7 +9,8 @@ public:
     Projectile();
     Projectile(glm::vec3 spawn_position, Hero* target);
 
-    void update(const float delta_time, const Camera& camera, const Shield& shield, std::vector<Hero>& heroes);
+    void update(const float delta_time, const Camera& camera, const Shield& shield,
+        std::vector<Hero>& heroes, std::mutex& hero_mutex, const SpatialGrid& grid);
     void register_draw(Sprite_Manager<Projectile>& sprite_manager) const;
 
     glm::mat4 get_model_matrix() const;
@@ -16,8 +20,8 @@ public:
 
 private:
 
-    void check_collisions(std::vector<Hero>& heroes);
-    void explode(std::vector<Hero>& heroes);
+    void check_collisions(std::vector<Hero>& heroes, std::mutex& hero_mutex, const SpatialGrid& grid);
+    void explode(std::vector<Hero>& heroes, std::mutex& hero_mutex, const SpatialGrid& grid);
 
     void rotate_to_camera(const Camera& camera);
 

@@ -34,6 +34,13 @@ private:
     void show_health_values() const;
     void show_mana_values() const;
 
+    // Merge sort hulpfuncties (algemene sort)
+    void merge(std::vector<int>& vec, int left, int mid, int right) const;
+    void merge_sort(std::vector<int>& vec, int left, int right) const;
+
+    // Counting sort voor begrensde integer waarden (health/mana 0-1000)
+    std::vector<int> counting_sort(const std::vector<int>& to_sort, int max_value) const;
+
     glm::dvec2 prev_mouse_pos;
 
     std::vector<Hero> heroes;

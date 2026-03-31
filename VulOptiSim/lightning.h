@@ -1,4 +1,7 @@
 #pragma once
+#include <mutex>
+
+struct SpatialGrid; // Forward declaration
 
 class Lightning
 {
@@ -7,9 +10,9 @@ public:
     Lightning();
     Lightning(glm::vec3 position);
 
-    void update(const float delta_time, const Camera& camera, std::vector<Hero>& heroes);
+    void update(const float delta_time, const Camera& camera, std::vector<Hero>& heroes,
+        const SpatialGrid& grid, std::mutex& hero_mutex);
     void register_draw(Sprite_Manager<Lightning>& sprite_manager) const;
-
 
     glm::mat4 get_model_matrix() const;
     glm::uint32_t get_texture_index() const;
@@ -22,7 +25,7 @@ private:
 
     void rotate_to_camera(const Camera& camera);
 
-    void check_hits(std::vector<Hero>& heroes) const;
+    void check_hits(std::vector<Hero>& heroes, const SpatialGrid& grid, std::mutex& hero_mutex) const;
 
     Sprite_Animation animation_timer;
 
@@ -39,4 +42,3 @@ private:
 
     Transform transform;
 };
-

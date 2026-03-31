@@ -104,55 +104,88 @@ void Shield::draw(vulvox::Renderer* renderer) const
     renderer->draw_planes(texture_name, transforms, texture_indices, uvs);
 }
 
+/// <summary>
+/// Berekent de convex hull van een set 2D-punten met Graham Scan.
+/// 
+/// Stap 1: Vind het laagste punt (ankerpunt).
+/// Stap 2: Sorteer alle andere punten op hoek ten opzichte van het ankerpunt.
+/// Stap 3: Loop door de gesorteerde punten en bouw de hull op.
+///         Bij elke stap: als het nieuwe punt een rechtse bocht maakt (clockwise),
+///         verwijder het vorige punt van de hull. Herhaal tot er een linkse bocht is.
+///
+/// Was: Jarvis March O(n * h), waarbij h = aantal hullpunten.
+/// Nu:  Graham Scan O(n log n), onafhankelijk van het aantal hullpunten.
+/// </summary>
 std::vector<glm::vec2> Shield::convex_hull(std::vector<glm::vec2> all_points) const
 {
+    // Verwijder bijna-duplicaten (zelfde logica als voorheen)
     all_points.erase(std::ranges::unique(all_points, [](const glm::vec2& a, const glm::vec2& b)
         {
-            //To prevent float rounding errors use epsilon (removes points nearly on top of each other)
             return glm::abs(a.x - b.x) < 0.001f && glm::abs(a.y - b.y) < 0.001f;
         }).begin(), all_points.end());
 
-    glm::vec2 point_on_hull = all_points.at(0);
+    if (all_points.size() < 3) return all_points;
 
-    //Find left most position, when equal, select lowest y
-    for (const glm::vec2& point : all_points)
+    // Stap 1: Vind het laagste punt (laagste y, bij gelijk de meest linkse x)
+    // Dit punt ligt gegarandeerd op de convex hull
+    int lowest_index = 0;
+    for (int i = 1; i < static_cast<int>(all_points.size()); i++)
     {
-        if (point.x < point_on_hull.x || (point.x == point_on_hull.x && point.y < point_on_hull.y))
+        if (all_points[i].y < all_points[lowest_index].y ||
+            (all_points[i].y == all_points[lowest_index].y && all_points[i].x < all_points[lowest_index].x))
         {
-            point_on_hull = point;
+            lowest_index = i;
         }
     }
 
-    std::vector<glm::vec2> forcefield_hull;
+    // Zet het ankerpunt vooraan in de vector
+    std::swap(all_points[0], all_points[lowest_index]);
+    glm::vec2 anchor = all_points[0];
 
-    while (true)
+    // Stap 2: Sorteer de rest op polaire hoek t.o.v. het ankerpunt
+    // atan2 geeft de hoek in radialen. Bij gelijke hoek: dichtste punt eerst.
+    std::sort(all_points.begin() + 1, all_points.end(),
+        [&anchor](const glm::vec2& a, const glm::vec2& b)
+        {
+            // Kruisproduct bepaalt welk punt een grotere hoek heeft t.o.v. anchor
+            float cross = (a.x - anchor.x) * (b.y - anchor.y)
+                - (a.y - anchor.y) * (b.x - anchor.x);
+
+            if (cross != 0.0f)
+                return cross > 0.0f;
+
+            // Zelfde hoek: dichtstbijzijnde punt eerst
+            return glm::length2(a - anchor) < glm::length2(b - anchor);
+        });
+
+    // Stap 3: Bouw de hull op met een stack-achtige vector
+    // Voor elk nieuw punt: verwijder punten van de stack zolang ze een
+    // clockwise (rechtse) bocht maken. Dat betekent dat ze BINNEN de hull liggen.
+    std::vector<glm::vec2> hull;
+    hull.push_back(all_points[0]);
+    hull.push_back(all_points[1]);
+
+    for (int i = 2; i < static_cast<int>(all_points.size()); i++)
     {
-        //Add last found point
-        forcefield_hull.push_back(point_on_hull);
-
-        //Loop through all points replacing the endpoint with the current iteration every time 
-        //it lies left of the current segment formed by point_on_hull and the current endpoint.
-        //By the end we have a segment with no points on the left and thus a point on the convex hull.
-        glm::vec2 endpoint = all_points.at(0);
-        for (const glm::vec2& point : all_points)
+        while (hull.size() > 1)
         {
-            if ((endpoint == point_on_hull) || orientation(point_on_hull, endpoint, point) < 0.f)
-            {
-                endpoint = point;
-            }
-        }
+            glm::vec2 top = hull.back();
+            glm::vec2 second = hull[hull.size() - 2];
 
-        //Set the starting point of the next segment to the found endpoint.
-        point_on_hull = endpoint;
+            // Kruisproduct: positief = linkse bocht (counter-clockwise), op de hull
+            //               nul of negatief = rechtse bocht of collineair, niet op de hull
+            float cross = (top.x - second.x) * (all_points[i].y - second.y)
+                - (top.y - second.y) * (all_points[i].x - second.x);
 
-        //If we went all the way around we are done.
-        if (endpoint == forcefield_hull.at(0))
-        {
-            break;
+            if (cross <= 0.0f)
+                hull.pop_back(); // Verwijder punt dat binnen de hull ligt
+            else
+                break; // Linkse bocht gevonden, stop met verwijderen
         }
+        hull.push_back(all_points[i]);
     }
 
-    return forcefield_hull;
+    return hull;
 }
 
 bool Shield::intersects(const glm::vec2& circle_center, float radius) const

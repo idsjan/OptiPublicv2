@@ -57,6 +57,9 @@
     <ClCompile Include="log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="tests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -105,6 +108,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\Downloads\pathfinding_benchmark.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spatial_grid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
